@@ -4,7 +4,7 @@
 ## Simple serialization example
 
 ```
-    [Serializable]
+		[Serializable]
 		public struct Vec2<T>
 		{
 			public T x, y;
@@ -42,7 +42,7 @@
 And these can be used with the following code.
 
 ```
-    public static void Examples()
+		public static void Examples()
 		{
 			//deseriealize simple struct from string
 			if (JsonConvert.Deserialize<Vec2<float>>("{x:1.1,y:7.9}") case .Ok(let v2))
