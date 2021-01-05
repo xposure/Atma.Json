@@ -58,37 +58,24 @@ namespace Atma
 	{
 		public uint32 line;
 		public uint16 pos;
-		public char8 ch => (_bufferPos + _lookAheadPos) >= _buffer.Length ? '\0' : _buffer[_bufferPos + _lookAheadPos];
 
-		public bool IsEOF() => ch == '\0';
-		public bool IsField() => ch >= (.)0x20;
-		public bool IsAlpha => (ch >= (.)0x41 && ch <= (.)0x5a) || (ch >= (.)0x61 && ch <= (.)0x7a);
-		public bool IsUnderscore => ch == (.)0x5f;
-		public bool IsCharacter() => ch >= (.)0x20;
-		public bool IsString() => ch == (.)0x22;
-		public bool IsEscape() => ch == (.)0x5c;
-		public bool IsDigit() => ch >= (.)0x30 && ch <= (.)0x39;
-		public bool IsOneNine => ch >= (.)0x31 && ch <= (.)0x39;
-		public bool IsNegative => ch == (.)0x2d;
-		public bool IsPositive => ch == (.)0x2b;
-		public bool IsSign() => IsNegative || IsPositive;
-		public bool IsColon() => ch == (.)0x3a;
-		public bool IsComma() => ch == (.)0x2c;
-		public bool IsPeriod => ch == (.)0x2e;
-		public bool IsExponent => ch == (.)0x45 || ch == (.)0x65;
-		public bool IsObjectStart() => ch == (.)0x7b;
-		public bool IsObjectEnd() => ch == (.)0x7d;
-		public bool IsArrayStart() => ch == (.)0x5b;
-		public bool IsArrayEnd() => ch == (.)0x5d;
-		public bool IsSpace => ch == (.)0x20;
-		public bool IsCR => ch == (.)0x0d;
-		public bool IsLF => ch == (.)0x0a;
-		public bool IsTab => ch == (.)0x09;
-		public bool IsBackspace => ch == (.)0x08;
-		public bool IsFormFeed => ch == (.)0x14;
-		public bool IsUnicode => ch == (.)0x75;
-		public bool IsForwardSlash => ch == (.)0x2f;
-		public bool IsWhiteSpace => IsSpace || IsCR || IsLF || IsTab;
+		[Inline] public char8 ch => (_bufferPos + _lookAheadPos) >= _buffer.Length ? '\0' : _buffer[_bufferPos + _lookAheadPos];
+		[Inline] public bool IsEOF() => ch == '\0';
+		[Inline] public bool IsDigit() => ch >= '0' && ch <= '9';
+		[Inline] public bool IsSign() => ch == '-' || ch == '+';
+		[Inline] public bool IsCharacter() => ch >= (.)0x20;
+		[Inline] public bool IsString() => ch == '"' || ch == '\'';
+		[Inline] public bool IsEscape() => ch == '\\';
+		[Inline] public bool IsColon() => ch == ':';
+		[Inline] public bool IsComma() => ch == ',';
+		[Inline] public bool IsPeriod() => ch == '.';
+		[Inline] public bool IsExponent() => ch == 'e' || ch == 'E';
+		[Inline] public bool IsObjectStart() => ch == '{';
+		[Inline] public bool IsObjectEnd() => ch == '}';
+		[Inline] public bool IsArrayStart() => ch == '[';
+		[Inline] public bool IsArrayEnd() => ch == ']';
+		[Inline] public bool IsLF() => ch == (.)0x0a;
+		[Inline] public bool IsWhiteSpace() => ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
 
 		internal List<Token> _tokens = new .() ~ delete _;
 		private StringView _buffer;
@@ -314,10 +301,11 @@ namespace Atma
 			let tokenLine = _line;
 			let tokenPos = _pos;
 
-			var isString = IsString();
+			var stringQuote = '\0';
 
-			if (isString)
+			if (IsString())
 			{
+				stringQuote = ch;
 				_pos++;
 				_bufferPos++;
 			}
@@ -330,7 +318,7 @@ namespace Atma
 
 			_lookAheadPos++;
 
-			while (!IsWhiteSpace && !IsString() && !IsEOF() && !IsColon())
+			while (!IsWhiteSpace() && ch != stringQuote && !IsEOF() && !IsColon())
 			{
 				if (!CheckTrue( => IsFieldCharacter, scope $"Unexpected character in field '{ch}'"))
 					return false;
@@ -338,12 +326,12 @@ namespace Atma
 				_lookAheadPos++;
 			}
 
-			if (isString)
+			if (stringQuote != 0)
 			{
 				if (!CheckFalse( => IsEOF, "Unexpected end of buffer"))
 					return false;
 
-				if (!CheckTrue( => IsString, "Expected \""))
+				if (!CheckTrue(scope () => ch == stringQuote, scope $"Expected {stringQuote}"))
 					return false;
 
 				AddToken(tokenLine, tokenPos, .Field);
@@ -412,11 +400,13 @@ namespace Atma
 			let tokenLine = _line;
 			let tokenPos = _pos;
 
-			if (!CheckTrue( => IsString, "Expected string start (\")"))
+			if (!CheckTrue( => IsString, "Expected string start (\" | ')"))
 				return false;
 
+			let stringQuote = ch;
+
 			_lookAheadPos++;
-			while (!IsString())
+			while (ch != stringQuote)
 			{
 				if (!CheckFalse( => IsEOF, "Unexpected end of buffer"))
 					return false;
@@ -425,8 +415,15 @@ namespace Atma
 				{
 					//do escape
 					_lookAheadPos++;
-					switch (ch) {
-					case '"','\\','r','n','t','b','f','/':
+					switch (ch)
+					{
+					case '"','\'':
+						if (ch != stringQuote)
+						{
+							AddError(scope $"Unexpected escape character '\\{ch}'.");
+							return false;
+						}
+					case '\\','r','n','t','b','f','/':
 					case 'u':
 						AddError(scope $"Unicode escape is not supported.");
 						return false;
@@ -446,7 +443,7 @@ namespace Atma
 			}
 
 
-			if (IsString())
+			if (ch == stringQuote)
 			{
 				_lookAheadPos++;
 				AddToken(tokenLine, tokenPos, .String);
@@ -464,7 +461,7 @@ namespace Atma
 			if (!ParseInteger())
 				return false;
 
-			if (IsPeriod)
+			if (IsPeriod())
 			{
 				_lookAheadPos++;
 				if (!ParseFraction())
@@ -484,7 +481,7 @@ namespace Atma
 			while (IsDigit())
 				_lookAheadPos++;
 
-			if (IsExponent)
+			if (IsExponent())
 			{
 				_lookAheadPos++;
 
@@ -515,9 +512,9 @@ namespace Atma
 
 		private void EatWhiteSpace()
 		{
-			while (IsWhiteSpace)
+			while (IsWhiteSpace())
 			{
-				if (IsLF)
+				if (IsLF())
 				{
 					line++;
 					pos = 1;

@@ -16,11 +16,22 @@ namespace Atma
 			return true;
 		}
 
-		public static Result<bool> Deserialize<T>(ref T target, StringView json)
+		public static Result<bool> Deserialize<T>(T target, StringView json)
+			where T : class
 		{
 			var reader = scope JsonReader();
+#unwarn
 			return reader.Parse<T>(&target, json);
 		}
+
+		public static Result<bool> Deserialize<T>(T* target, StringView json)
+			where T : struct
+		{
+			var reader = scope JsonReader();
+#unwarn
+			return reader.Parse<T>(target, json);
+		}
+
 
 		public static Result<T> Deserialize<T>(StringView json)
 		{
