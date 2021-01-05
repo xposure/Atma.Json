@@ -1,0 +1,8 @@
+FileVersion = 1
+Projects = {"Atma.Json" = {Path = "src/Atma.Json"}, "Atma.Json.Tests" = {Path = "tests/Atma.Json.Tests"}}
+
+[Configs.Test.Win64]
+ConfigSelections = {corlib = {Config = "Debug"}}
+
+[Configs.Test.Win32]
+ConfigSelections = {corlib = {Config = "Debug"}}

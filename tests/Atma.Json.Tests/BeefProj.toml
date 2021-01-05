@@ -1,5 +1,5 @@
 FileVersion = 1
-Dependencies = {corlib = "*", "Atma.Common" = "*", "Atma.Json" = "*"}
+Dependencies = {corlib = "*", "Atma.Json" = "*", corlib = "*"}
 
 [Project]
 Name = "Atma.Json.Tests"
