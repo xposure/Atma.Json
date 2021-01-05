@@ -42,6 +42,7 @@ namespace Atma.Json.Tests
 		public class StringRef
 		{
 			//you can create a new string or the runtime will create it for you if null
+			//the runtime will also delete and null this string if it finds {text:null}
 			public int x;
 			public String Text = new .() ~ delete _;
 			public this(int x)
@@ -53,7 +54,7 @@ namespace Atma.Json.Tests
 		[Test]
 		public static void Examples()
 		{
-			//deseriealize simple struct from string
+			//deserialize a simple struct from string
 			if (JsonConvert.Deserialize<Vec2<float>>("{x:1.1,y:7.9}") case .Ok(let v2))
 				Console.WriteLine(v2.ToString(..scope String()));//Output: [x:1.1, y:7.9]
 
@@ -78,10 +79,14 @@ namespace Atma.Json.Tests
 			//deseriealize simple struct from string
 			if (JsonConvert.Deserialize<Vec2<float>>("[1.1,7.9]") case .Ok(let v2))
 				Console.WriteLine(v2.ToString(..scope String()));//Output: [x:1.1, y:7.9]
+			{
+				//you can also pass in your own structs by pointer
+				let result = JsonConvert.Deserialize(..scope Vec2<float>[1]* , "[1.1,7.9]");
+				Console.WriteLine(result.ToString(..scope String()));//Output: [x:1.1, y:7.9]
+			}
 		}
 
-		//We can't pass in Vec2<> as the Converter type so we much manually do it as void
-		//so we need to do void and do our own casts
+		//We can't pass in Vec2<> as the Converter type so we must manually do it as void
 		//we still want to use StructConverter because it handles, pointers, nullables, etc
 		public class JsonVec2Converter : JsonStructConverter<void>
 		{
