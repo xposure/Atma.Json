@@ -31,5 +31,11 @@ namespace Atma
 			converter = null;
 			return false;
 		}
+
+		public static void AddConverter(JsonConverter converter)
+		{
+			//custom converteres get inserted first
+			_converters.Insert(0, converter);
+		}
 	}
 }

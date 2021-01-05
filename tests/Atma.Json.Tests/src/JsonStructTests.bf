@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 namespace Atma.Json.Tests
 {
 	class JsonStructTests
@@ -84,46 +85,5 @@ namespace Atma.Json.Tests
 			}
 		}
 
-		[Serializable]
-		public struct Vec2<T>
-		{
-			public T x, y;
-			public this(T x, T y)
-			{
-				this.x = x;
-				this.y = y;
-			}
-
-			public override void ToString(String strBuffer)
-			{
-				strBuffer.Append(scope $"[x:{x:0.0}, y:{y:0.0}] ");
-			}
-		}
-
-		[Test]
-		public static void ParseVec3()
-		{
-			//deseriealize simple struct from string
-			if (JsonConvert.Deserialize<Vec2<float>>("{x:1.1,y:7.9}") case .Ok(let val))
-				Console.WriteLine(val.ToString(..scope String()));//[x:1.1, y:7.9]
-		}
-
-		[Serializable]
-		public struct Vec3<T>
-		{
-			public Vec2<T> p;
-			public T z;
-
-			public this(Vec2<T> p, T z)
-			{
-				this.p = p;
-				this.z = z;
-			}
-
-			public override void ToString(String strBuffer)
-			{
-				strBuffer.Append(scope $"[x:{p.x:0.0}, y:{p.y:0.0}, z:{z:0.0}] ");
-			}
-		}
 	}
 }
