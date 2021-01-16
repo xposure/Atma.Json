@@ -13,6 +13,7 @@ namespace Atma
 			_converters.Add(new JsonArrayConverter());
 			_converters.Add(new JsonSizedArrayConverter());
 			_converters.Add(new JsonStringConverter());
+			_converters.Add(new JsonListConverter());
 
 			//default converters for [SerializeAttribute]
 			_converters.Add(new JsonStructFactory());
