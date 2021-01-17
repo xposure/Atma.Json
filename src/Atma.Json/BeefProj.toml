@@ -1,6 +1,15 @@
 FileVersion = 1
+Dependencies = {corlib = "*", corlib = "*"}
 
 [Project]
 Name = "Atma.Json"
 TargetType = "BeefLib"
 StartupObject = "Atma.Json.Program"
+
+[[Project.DistinctOptions]]
+Filter = "System.Collections.List<*>"
+ReflectAlwaysInclude = "IncludeAll"
+ReflectStaticMethods = true
+ReflectNonStaticMethods = true
+ReflectConstructors = true
+ReflectMethodFilter = "__BfCtor;Add"
