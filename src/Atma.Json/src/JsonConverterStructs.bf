@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Collections;
 namespace Atma
 {
-	public class JsonBoolConverter : JsonStructConverter<bool>
+	public class JsonBoolConverter : JsonStructConverter<bool> 
 	{
 		protected override void OnWriteJson(JsonWriter writer, Type type, bool* target)
 		{
@@ -59,7 +59,7 @@ namespace Atma
 		}
 	}
 
-	public abstract class JsonStructConverter<T> : JsonConverter<T>
+	public abstract class JsonStructConverter<T> : JsonConverter<T> where T : var
 	{
 		public override void WriteJson(JsonWriter writer, Type type, void* target)
 		{
