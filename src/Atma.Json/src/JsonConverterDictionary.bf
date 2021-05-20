@@ -24,18 +24,14 @@ namespace Atma
 			else
 			{
 				let dictType = type as SpecializedGenericType;
-				let genericTypeKey = dictType.GetGenericArg(0);
 				let genericTypeValue = dictType.GetGenericArg(1);
-				let dict = (Dictionary<Object, Object>*)&obj;
+				let dict = (Dictionary<String, Object>*)&obj;
 
 				writer.WriteObjectStart();
 				for (var item in *dict)
 				{
 					writer.WriteComma();
-					if (genericTypeKey.IsPrimitive)
-						writer.WriteValue(genericTypeKey, (void*)&item.key);
-					else
-						writer.WriteValue(genericTypeKey, Internal.UnsafeCastToPtr(item.key));
+					writer.WriteString(item.key);
 
 					writer.WriteRaw(':');
 

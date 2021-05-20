@@ -37,7 +37,30 @@ namespace Atma.Json.Tests
 				}
 				DeleteDictionaryAndKeys!(val);
 			}
+		}
 
+		[Test]
+		public static void WriteDictionary()
+		{
+			{
+				let json = scope String();
+				let dict = scope Dictionary<String, int>(3);
+				dict.Add("_0", 1);
+				dict.Add("_1", 2);
+				dict.Add("_2", 3);
+				Assert.IsTrue(JsonConvert.Serialize(dict, json));
+				Assert.EqualTo(json, "{\"_0\":1,\"_1\":2,\"_2\":3}");
+			}
+			{
+				let json = scope String();
+				Assert.IsTrue(JsonConvert.Serialize(scope Dictionary<String, int>(), json));
+				Assert.EqualTo(json, "{}");
+			}
+			{
+				let json = scope String();
+				Assert.IsTrue(JsonConvert.Serialize<Dictionary<String, int>>(null, json));
+				Assert.EqualTo(json, "null");
+			}
 		}
 	}
 }
