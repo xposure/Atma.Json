@@ -10,6 +10,11 @@ namespace Atma.Json.Tests
 		{
 			{
 				var jr = scope JsonReader();
+				Assert.IsTrue(jr.Parse<List<int>>("null") case .Ok(let val));
+				Assert.IsNull(val);
+			}
+			{
+				var jr = scope JsonReader();
 				Assert.IsTrue(jr.Parse<List<int>>("[]") case .Ok(let val));
 				Assert.EqualTo(val.Count, 0);
 				delete val;
@@ -37,11 +42,6 @@ namespace Atma.Json.Tests
 				Assert.EqualTo(val[0].Count, 3);
 				Assert.EqualTo(val[1].Count, 3);
 				DeleteContainerAndItems!(val);
-			}
-			{
-				var jr = scope JsonReader();
-				Assert.IsTrue(jr.Parse<List<int>>("null") case .Ok(let val));
-				Assert.IsNull(val);
 			}
 		}
 
