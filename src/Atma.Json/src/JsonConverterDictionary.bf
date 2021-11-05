@@ -4,14 +4,14 @@ using System.Reflection;
 
 namespace Atma
 {
-	public class JsonListConverter : JsonConverter
+	public class JsonDictionaryConverter : JsonConverter
 	{
 		public override bool CanConvert(Type type)
 		{
 			let typeName = scope String();
 			type.GetName(typeName);
 
-			return typeName.Equals("List");
+			return typeName.Equals("Dictionary");
 		}
 
 		public override void WriteJson(JsonWriter writer, Type type, void* target)
@@ -23,31 +23,46 @@ namespace Atma
 			}
 			else
 			{
-				let listType = type as SpecializedGenericType;
-				let genericType = listType.GetGenericArg(0);
-				let list = (List<Object>*)&obj;
-				writer.WriteArrayStart();
-				for (var item in *list)
+				let dictType = type as SpecializedGenericType;
+				let genericTypeValue = dictType.GetGenericArg(1);
+				let dict = (Dictionary<String, Object>*)&obj;
+
+				writer.WriteObjectStart();
+				for (var item in *dict)
 				{
 					writer.WriteComma();
-					if (genericType.IsPrimitive)
-						writer.WriteValue(genericType, (void*)&item);
+					writer.WriteString(item.key);
+
+					writer.WriteRaw(':');
+
+					if (genericTypeValue.IsPrimitive)
+						writer.WriteValue(genericTypeValue, (void*)&item.value);
 					else
-						writer.WriteValue(genericType, Internal.UnsafeCastToPtr(item));
+						writer.WriteValue(genericTypeValue, Internal.UnsafeCastToPtr(item.value));
 				}
-				writer.WriteArrayEnd();
+				writer.WriteObjectEnd();
 			}
 		}
 
 		public override bool ReadJson(JsonReader reader, Type type, void* target)
 		{
-			let listType = type as SpecializedGenericType;
-			let genericType = listType.GetGenericArg(0);
-			MethodInfo addMethod;
-			if (listType.GetMethod("Add") case .Ok(let val))
-				addMethod = val;
-			else
+			let dictType = type as SpecializedGenericType;
+			let genericTypeKey = dictType.GetGenericArg(0);
+			let genericTypeValue = dictType.GetGenericArg(1);
+
+			MethodInfo addMethod = default;
+			let methods = dictType.GetMethods();
+			for (let m in methods)
+			{
+				if (m.Name == "Add" && m.ParamCount == 2)
+				{
+					addMethod = m;
+					break;
+				}
+			}
+			if (addMethod == default)
 				return false;
+
 			var obj = Internal.UnsafeCastToObject(*(void**)target);
 
 			if (reader.Current.type == .Null)
@@ -57,7 +72,7 @@ namespace Atma
 
 				return true;
 			}
-			if (!reader.Expect(.ArrayStart, let token))
+			if (!reader.Expect(.ObjectStart, let token))
 				return false;
 
 
@@ -74,36 +89,48 @@ namespace Atma
 
 			for (var i < token.elements)
 			{
+				String ptrKey = null;
+
+				if (!reader.Expect(.Field, let field))
+				{
+					if (shouldDelete)
+						deleteObject();
+
+					return false;
+				}
+
+				ptrKey = new String(field.text);
+
 				void* ptr = null;
 
 				mixin Add(Object objItem)
 				{
-					if (addMethod.Invoke(obj, objItem) case .Err)
+					if (addMethod.Invoke(obj, ptrKey, objItem) case .Err)
 					{
 						if (shouldDelete)
 							deleteObject();
-
+	
 						return false;
 					}
 				}
 
-				if (genericType.IsPrimitive)
+				if (genericTypeValue.IsPrimitive)
 				{
 					Variant varVal;
-					ptr = Variant.Alloc(genericType, out varVal);
-					if (!reader.Parse(genericType, ptr))
+					ptr = Variant.Alloc(genericTypeValue, out varVal);
+					if (!reader.Parse(genericTypeValue, ptr))
 						return false;
 					Add!(varVal.GetValueData());
 				}
 				else
 				{
-					if (!reader.Parse(genericType, &ptr))
+					if (!reader.Parse(genericTypeValue, &ptr))
 						return false;
 					Add!(Internal.UnsafeCastToObject(ptr));
 				}
 			}
 
-			if (reader.Expect(.ArrayEnd, ?))
+			if (reader.Expect(.ObjectEnd, ?))
 				return true;
 
 			if (shouldDelete)
