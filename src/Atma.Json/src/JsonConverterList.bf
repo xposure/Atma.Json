@@ -75,27 +75,31 @@ namespace Atma
 			for (var i < token.elements)
 			{
 				void* ptr = null;
-				reader.Parse(genericType, &ptr);
-				if (genericType.IsPrimitive)
+
+				mixin Add(Object objItem)
 				{
-					if (addMethod.Invoke(obj, (int)ptr) case .Err)
+					if (addMethod.Invoke(obj, objItem) case .Err)
 					{
 						if (shouldDelete)
 							deleteObject();
-	
+
 						return false;
 					}
 				}
+
+				if (genericType.IsPrimitive)
+				{
+					Variant varVal;
+					ptr = Variant.Alloc(genericType, out varVal);
+					if (!reader.Parse(genericType, ptr))
+						return false;
+					Add!(varVal.GetValueData());
+				}
 				else
 				{
-					let ptrobj = Internal.UnsafeCastToObject(ptr);
-					if (addMethod.Invoke(obj, ptrobj) case .Err)
-	 				{
-						 if (shouldDelete)
-							deleteObject();
-	
+					if (!reader.Parse(genericType, &ptr))
 						return false;
-					}
+					Add!(Internal.UnsafeCastToObject(ptr));
 				}
 			}
 

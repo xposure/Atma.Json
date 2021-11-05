@@ -90,7 +90,7 @@ namespace Atma
 			for (var i < token.elements)
 			{
 				String ptrKey = null;
-				void* ptrVal = null;
+
 				if (!reader.Expect(.Field, let field))
 				{
 					if (shouldDelete)
@@ -101,21 +101,32 @@ namespace Atma
 
 				ptrKey = new String(field.text);
 
-				reader.Parse(genericTypeValue, &ptrVal);
+				void* ptr = null;
 
-				int valVal = 0;
+				mixin Add(Object objItem)
+				{
+					if (addMethod.Invoke(obj, ptrKey, objItem) case .Err)
+					{
+						if (shouldDelete)
+							deleteObject();
+	
+						return false;
+					}
+				}
 
 				if (genericTypeValue.IsPrimitive)
-				   valVal = (int)ptrVal;
-				else
-					valVal = (int)Internal.UnsafeCastToObject(ptrVal);
-
-				if (addMethod.Invoke(obj, ptrKey, valVal) case .Err)
 				{
-					if (shouldDelete)
-						deleteObject();
-
-					return false;
+					Variant varVal;
+					ptr = Variant.Alloc(genericTypeValue, out varVal);
+					if (!reader.Parse(genericTypeValue, ptr))
+						return false;
+					Add!(varVal.GetValueData());
+				}
+				else
+				{
+					if (!reader.Parse(genericTypeValue, &ptr))
+						return false;
+					Add!(Internal.UnsafeCastToObject(ptr));
 				}
 			}
 
